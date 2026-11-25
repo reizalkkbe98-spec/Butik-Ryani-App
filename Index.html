@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Butik Ryani — Kontrol Pusat</title>
+  <style>
+    :root {
+      --bg: #f6f4f1;
+      --card: #ffffff;
+      --ink: #1e1b18;
+      --muted: #6e675f;
+      --accent: #7c3f2b;
+      --border: #e5dfd7;
+      --ok: #1f6f43;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--ink); padding-bottom: 76px; }
+    header {
+      background: var(--ink); color: #fff; padding: 14px 16px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    header h1 { margin: 0; font-size: 17px; letter-spacing: 0.3px; }
+    header small { color: #d6cfc7; font-size: 12px; }
+    .loc-bar {
+      display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px;
+      background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .chip {
+      border: 1px solid var(--border); background: #fff; color: var(--ink);
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; white-space: nowrap; cursor: pointer;
+    }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .container { padding: 14px; max-width: 520px; margin: 0 auto; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 12px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .stat-val { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin: 10px 0 4px; color: var(--muted); }
+    input, select {
+      width: 100%; padding: 10px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; background: #fff;
+    }
+    button.btn {
+      width: 100%; padding: 12px; margin-top: 14px; border: none; border-radius: 10px;
+      background: var(--accent); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer;
+    }
+    button.btn.secondary { background: #3b3530; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-weight: 600; }
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+      padding: 8px 0; z-index: 20;
+    }
+    .nav button {
+      background: none; border: none; font-size: 12px; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+    }
+    .nav button.active { color: var(--accent); font-weight: 700; }
+    .hidden { display: none; }
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--ok); color: #fff; padding: 8px 16px; border-radius: 999px;
+      font-size: 12px; z-index: 50; display: none;
+    }
+
+    /* Tampilan khusus saat Export / Cetak PDF */
+    #pdfSheet {
+      display: none;
+      background: #ffffff;
+      color: #1e1b18;
+      padding: 24px;
+    }
+    @media print {
+      body { background: #ffffff !important; padding: 0 !important; }
+      header, .loc-bar, .nav, .container, .toast { display: none !important; }
+      #pdfSheet { display: block !important; }
+      .pdf-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        border-bottom: 2px solid #7c3f2b; padding-bottom: 12px; margin-bottom: 18px;
+      }
+      .pdf-brand h2 { margin: 0; font-size: 20px; color: #7c3f2b; }
+      .pdf-brand p { margin: 4px 0 0; font-size: 12px; color: #6e675f; }
+      .pdf-meta { text-align: right; font-size: 11px; color: #4b453f; }
+      .pdf-cards {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;
+      }
+      .pdf-card {
+        border: 1px solid #e5dfd7; border-radius: 8px; padding: 10px; background: #faf8f5;
+      }
+      .pdf-card small { font-size: 10px; color: #6e675f; text-transform: uppercase; }
+      .pdf-card div { font-size: 14px; font-weight: 700; margin-top: 4px; }
+      .pdf-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+      .pdf-table th { background: #7c3f2b; color: #ffffff; padding: 8px 6px; text-align: left; }
+      .pdf-table td { padding: 7px 6px; border-bottom: 1px solid #e5dfd7; }
+      .pdf-table tr:nth-child(even) td { background: #fcfbfa; }
+      .pdf-footer {
+        margin-top: 20px; font-size: 10px; color: #7a736b; text-align: right;
+        border-top: 1px solid #e5dfd7; padding-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Butik Ryani — Kontrol Pusat</h1>
+    <small>Gudang Ryani • Lina Kartika • Mitra PVJ</small>
+  </header>
+
+  <div class="loc-bar" id="locBar">
+    <button class="chip active" data-loc="SEMUA" onclick="setLoc('SEMUA', this)">Semua Bagian</button>
+    <button class="chip" data-loc="Gudang Ryani" onclick="setLoc('Gudang Ryani', this)">Gudang Ryani</button>
+    <button class="chip" data-loc="Lina Kartika" onclick="setLoc('Lina Kartika', this)">Lina Kartika</button>
+    <button class="chip" data-loc="Mitra PVJ" onclick="setLoc('Mitra PVJ', this)">Mitra PVJ</button>
+  </div>
+
+  <div class="container">
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-home">
+      <div class="grid-2">
+        <div class="card">
+          <div class="stat-label">Total Omzet</div>
+          <div class="stat-val" id="statOmzet">Rp 0</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Unit Terjual</div>
+          <div class="stat-val" id="statQty">0 pcs</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Sisa Stok Aktif</div>
+          <div class="stat-val" id="statStok">0 pcs</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Est. Laba Kotor</div>
+          <div class="stat-val" id="statLaba">Rp 0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong>Stok per Bagian</strong>
+          <button onclick="fetchDashboard()" style="border:1px solid var(--border); background:#fff; border-radius:6px; padding:4px 8px; font-size:11px; cursor:pointer;">Refresh</button>
+        </div>
+        <table id="tblStok">
+          <thead>
+            <tr><th>Produk</th><th>Gudang</th><th>Lina</th><th>PVJ</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: KASIR / PENJUALAN -->
+    <section id="tab-sale" class="hidden">
+      <div class="card">
+        <strong>Input Penjualan</strong>
+        <label>Lokasi Transaksi</label>
+        <select id="saleLoc">
+          <option value="Gudang Ryani">Gudang Ryani</option>
+          <option value="Lina Kartika">Lina Kartika</option>
+          <option value="Mitra PVJ">Mitra PVJ</option>
+        </select>
+
+        <label>Produk (SKU)</label>
+        <select id="saleSku" onchange="syncHargaJual()"></select>
+
+        <label>Jumlah (Qty)</label>
+        <input type="number" id="saleQty" value="1" min="1" />
+
+        <label>Harga Satuan (Rp)</label>
+        <input type="number" id="saleHarga" value="0" min="0" />
+
+        <label>Diskon Nominal (Rp)</label>
+        <input type="number" id="saleDiskon" value="0" min="0" />
+
+        <label>Metode Pembayaran</label>
+        <select id="saleMetode">
+          <option value="Tunai">Tunai</option>
+          <option value="QRIS">QRIS</option>
+          <option value="Transfer">Transfer</option>
+        </select>
+
+        <button class="btn" onclick="submitSale()">Simpan Penjualan</button>
+      </div>
+    </section>
+
+    <!-- TAB 3: TRANSFER STOK -->
+    <section id="tab-transfer" class="hidden">
+      <div class="card">
+        <strong>Transfer Stok dari Gudang Ryani</strong>
+        <label>Tujuan Anak Perusahaan</label>
+        <select id="trfTujuan">
+          <option value="Lina Kartika">Lina Kartika</option>
+          <option value="Mitra PVJ">Mitra PVJ</option>
+        </select>
+
+        <label>Produk (SKU)</label>
+        <select id="trfSku"></select>
+
+        <label>Jumlah Kirim (Qty)</label>
+        <input type="number" id="trfQty" value="1" min="1" />
+
+        <label>Catatan</label>
+        <input type="text" id="trfCatatan" placeholder="Contoh: Kirim stok display" />
+
+        <button class="btn secondary" onclick="submitTransfer()">Kirim Stok</button>
+      </div>
+      <div class="card">
+        <small>Untuk restok massal dalam jumlah besar ke Gudang Ryani, langsung tempel/ketik di tab <b>Master_Produk</b> &amp; <b>Log_Mutasi_Stok</b> pada Google Sheets, lalu tekan <b>Refresh</b> di Ringkasan.</small>
+      </div>
+    </section>
+
+    <!-- TAB 4: LAPORAN KUSTOM & PDF -->
+    <section id="tab-report" class="hidden">
+      <div class="card">
+        <strong>Filter Laporan Kustom</strong>
+        <label>Jenis Laporan</label>
+        <select id="repType">
+          <option value="PENJUALAN">Laporan Penjualan &amp; Estimasi Laba</option>
+          <option value="STOK">Laporan Posisi Stok per Bagian</option>
+        </select>
+
+        <label>Bagian</label>
+        <select id="repLoc">
+          <option value="SEMUA">Semua Bagian</option>
+          <option value="Gudang Ryani">Gudang Ryani</option>
+          <option value="Lina Kartika">Lina Kartika</option>
+          <option value="Mitra PVJ">Mitra PVJ</option>
+        </select>
+
+        <div class="grid-2">
+          <div>
+            <label>Dari Tanggal</label>
+            <input type="date" id="repStart" value="2026-11-01" />
+          </div>
+          <div>
+            <label>Sampai Tanggal</label>
+            <input type="date" id="repEnd" value="2026-11-30" />
+          </div>
+        </div>
+
+        <label>Kategori Produk</label>
+        <select id="repKat">
+          <option value="SEMUA">Semua Kategori</option>
+        </select>
+
+        <button class="btn" onclick="loadCustomReport()">Tampilkan Laporan</button>
+        <button class="btn secondary" onclick="exportPdfReport()">Simpan / Cetak PDF</button>
+      </div>
+
+      <div class="card" id="repSummary">
+        <strong>Ringkasan Terfilter</strong>
+        <p id="repText" style="font-size:13px; line-height:1.5;">Pilih filter di atas lalu tekan <b>Tampilkan Laporan</b> atau langsung <b>Simpan / Cetak PDF</b>.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- LEMBARAN DOKUMEN PDF RAPI -->
+  <div id="pdfSheet">
+    <div class="pdf-header">
+      <div class="pdf-brand">
+        <h2>LAPORAN BUTIK RYANI</h2>
+        <p>Pusat: Gudang Ryani • Cabang: Lina Kartika &amp; Mitra PVJ</p>
+      </div>
+      <div class="pdf-meta" id="pdfMeta"></div>
+    </div>
+
+    <div class="pdf-cards" id="pdfSummaryCards"></div>
+
+    <h3 id="pdfTableTitle" style="font-size:13px; margin:12px 0 6px;">Rincian Data</h3>
+    <table class="pdf-table" id="pdfTable">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="pdf-footer" id="pdfFooter"></div>
+  </div>
+
+  <div class="toast" id="toast">Tersimpan!</div>
+
+  <nav class="nav">
+    <button class="active" onclick="switchTab('tab-home', this)"><span>Ringkasan</span></button>
+    <button onclick="switchTab('tab-sale', this)"><span>Kasir</span></button>
+    <button onclick="switchTab('tab-transfer', this)"><span>Transfer</span></button>
+    <button onclick="switchTab('tab-report', this)"><span>Laporan</span></button>
+  </nav>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycby5k72HjbgZof_uMDwsA28-Zt5ULEVT6Jc7st0HzlIejF8DcBxJoJUcbBNmwy8Pru0/exec';
+    let activeLoc = 'SEMUA';
+    let cacheData = { stokList: [], penjualanList: [], produkList: [] };
+    let lastReportData = null;
+
+    const rupiah = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2200);
+    }
+
+    function switchTab(id, btn) {
+      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function setLoc(loc, el) {
+      activeLoc = loc;
+      document.querySelectorAll('#locBar .chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderDashboard();
+    }
+
+    async function fetchDashboard() {
+      if (!API_URL.startsWith('http')) return;
+      try {
+        const res = await fetch(`${API_URL}?action=dashboard`);
+        const json = await res.json();
+        if (json.status === 'ok') {
+          cacheData = json.data;
+          populateSelects();
+          renderDashboard();
+          showToast('Data tersinkronisasi');
+        }
+      } catch (err) {
+        showToast('Gagal memuat data');
+      }
+    }
+
+    function populateSelects() {
+      const skuOpts = cacheData.produkList.map(p =>
+        `<option value="${p.sku}" data-harga="${p.hargaJual}">${p.sku} — ${p.nama} (${p.warna}/${p.ukuran})</option>`
+      ).join('');
+      document.getElementById('saleSku').innerHTML = skuOpts;
+      document.getElementById('trfSku').innerHTML = skuOpts;
+      syncHargaJual();
+
+      const cats = [...new Set(cacheData.produkList.map(p => p.kategori).filter(Boolean))];
+      document.getElementById('repKat').innerHTML =
+        '<option value="SEMUA">Semua Kategori</option>' +
+        cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    function syncHargaJual() {
+      const sel = document.getElementById('saleSku');
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.harga) {
+        document.getElementById('saleHarga').value = opt.dataset.harga;
+      }
+    }
+
+    function renderDashboard() {
+      const sales = activeLoc === 'SEMUA'
+        ? cacheData.penjualanList
+        : cacheData.penjualanList.filter(s => s.lokasi === activeLoc);
+
+      const omzet = sales.reduce((a, b) => a + b.total, 0);
+      const qty = sales.reduce((a, b) => a + b.qty, 0);
+      const laba = sales.reduce((a, b) => a + (b.total - (b.qty * b.modalSatuan)), 0);
+
+      const stokSum = cacheData.stokList.reduce((a, item) => {
+        if (activeLoc === 'Gudang Ryani') return a + item.gudang;
+        if (activeLoc === 'Lina Kartika') return a + item.lina;
+        if (activeLoc === 'Mitra PVJ') return a + item.pvj;
+        return a + item.total;
+      }, 0);
+
+      document.getElementById('statOmzet').textContent = rupiah(omzet);
+      document.getElementById('statQty').textContent = `${qty} pcs`;
+      document.getElementById('statStok').textContent = `${stokSum} pcs`;
+      document.getElementById('statLaba').textContent = rupiah(laba);
+
+      const tbody = document.querySelector('#tblStok tbody');
+      tbody.innerHTML = cacheData.stokList.map(r => `
+        <tr>
+          <td><b>${r.nama}</b><br><small>${r.sku} • ${r.varian}</small></td>
+          <td>${r.gudang}</td>
+          <td>${r.lina}</td>
+          <td>${r.pvj}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function submitSale() {
+      const payload = {
+        lokasi: document.getElementById('saleLoc').value,
+        sku: document.getElementById('saleSku').value,
+        qty: Number(document.getElementById('saleQty').value),
+        hargaSatuan: Number(document.getElementById('saleHarga').value),
+        diskon: Number(document.getElementById('saleDiskon').value),
+        metode: document.getElementById('saleMetode').value
+      };
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ type: 'SALE', payload })
+      });
+      showToast('Penjualan tercatat di Sheets');
+      await fetchDashboard();
+    }
+
+    async function submitTransfer() {
+      const payload = {
+        tujuan: document.getElementById('trfTujuan').value,
+        sku: document.getElementById('trfSku').value,
+        qty: Number(document.getElementById('trfQty').value),
+        catatan: document.getElementById('trfCatatan').value
+      };
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ type: 'TRANSFER', payload })
+      });
+      showToast('Transfer stok tercatat');
+      await fetchDashboard();
+    }
+
+    async function loadCustomReport() {
+      const loc = document.getElementById('repLoc').value;
+      const start = document.getElementById('repStart').value;
+      const end = document.getElementById('repEnd').value;
+      const kat = document.getElementById('repKat').value;
+
+      const res = await fetch(`${API_URL}?action=report&lokasi=${encodeURIComponent(loc)}&start=${start}&end=${end}&kategori=${encodeURIComponent(kat)}`);
+      const json = await res.json();
+      if (json.status === 'ok') {
+        lastReportData = json.data;
+        const s = json.data.ringkasan;
+        document.getElementById('repText').innerHTML = `
+          Bagian: <b>${loc}</b> (${start} s.d. ${end})<br>
+          Transaksi: <b>${s.jumlahTransaksi}</b> • Unit Terjual: <b>${s.unitTerjual} pcs</b><br>
+          Omzet: <b>${rupiah(s.omzet)}</b> • Est. Laba Kotor: <b>${rupiah(s.labaKotor)}</b>
+        `;
+        showToast('Laporan siap dicetak');
+      }
+    }
+
+    async function exportPdfReport() {
+      const type = document.getElementById('repType').value;
+      const loc = document.getElementById('repLoc').value;
+      const start = document.getElementById('repStart').value;
+      const end = document.getElementById('repEnd').value;
+      const kat = document.getElementById('repKat').value;
+
+      if (type === 'PENJUALAN' && API_URL.startsWith('http')) {
+        await loadCustomReport();
+      }
+
+      const nowStr = new Date().toLocaleString('id-ID');
+      document.getElementById('pdfMeta').innerHTML = `
+        <b>Bagian:</b> ${loc}<br>
+        <b>Periode:</b> ${start} s.d. ${end}<br>
+        <b>Kategori:</b> ${kat}
+      `;
+      document.getElementById('pdfFooter').textContent = `Dicetak dari Aplikasi Kontrol Butik Ryani • ${nowStr}`;
+
+      const thead = document.querySelector('#pdfTable thead');
+      const tbody = document.querySelector('#pdfTable tbody');
+      const cards = document.getElementById('pdfSummaryCards');
+
+      if (type === 'STOK') {
+        const stokRows = (cacheData.stokList || []).filter(r => kat === 'SEMUA' || r.kategori === kat);
+        const totGudang = stokRows.reduce((a, r) => a + Number(r.gudang || 0), 0);
+        const totLina = stokRows.reduce((a, r) => a + Number(r.lina || 0), 0);
+        const totPvj = stokRows.reduce((a, r) => a + Number(r.pvj || 0), 0);
+        const totAll = totGudang + totLina + totPvj;
+
+        document.getElementById('pdfTableTitle').textContent = 'Rincian Posisi Stok per Bagian';
+        cards.innerHTML = `
+          <div class="pdf-card"><small>Gudang Ryani</small><div>${totGudang} pcs</div></div>
+          <div class="pdf-card"><small>Lina Kartika</small><div>${totLina} pcs</div></div>
+          <div class="pdf-card"><small>Mitra PVJ</small><div>${totPvj} pcs</div></div>
+          <div class="pdf-card"><small>Total Gabungan</small><div>${totAll} pcs</div></div>
+        `;
+
+        thead.innerHTML = `<tr><th>SKU</th><th>Produk &amp; Varian</th><th>Gudang</th><th>Lina Kartika</th><th>Mitra PVJ</th><th>Total</th></tr>`;
+        tbody.innerHTML = stokRows.map(r => `
+          <tr>
+            <td>${r.sku}</td>
+            <td>${r.nama} (${r.varian})</td>
+            <td>${r.gudang}</td>
+            <td>${r.lina}</td>
+            <td>${r.pvj}</td>
+            <td><b>${r.total}</b></td>
+          </tr>
+        `).join('');
+      } else {
+        const trx = (lastReportData && lastReportData.transaksi) || cacheData.penjualanList || [];
+        const omzet = trx.reduce((a, r) => a + Number(r.total || 0), 0);
+        const unit = trx.reduce((a, r) => a + Number(r.qty || 0), 0);
+        const laba = trx.reduce((a, r) => a + (Number(r.total || 0) - (Number(r.qty || 0) * Number(r.modalSatuan || 0))), 0);
+
+        document.getElementById('pdfTableTitle').textContent = 'Rincian Transaksi Penjualan';
+        cards.innerHTML = `
+          <div class="pdf-card"><small>Total Omzet</small><div>${rupiah(omzet)}</div></div>
+          <div class="pdf-card"><small>Unit Terjual</small><div>${unit} pcs</div></div>
+          <div class="pdf-card"><small>Est. Laba Kotor</small><div>${rupiah(laba)}</div></div>
+          <div class="pdf-card"><small>Jumlah Transaksi</small><div>${trx.length} trx</div></div>
+        `;
+
+        thead.innerHTML = `<tr><th>Tanggal</th><th>Lokasi</th><th>Produk</th><th>Qty</th><th>Total</th><th>Bayar</th></tr>`;
+        tbody.innerHTML = trx.map(r => `
+          <tr>
+            <td>${r.tanggal}</td>
+            <td>${r.lokasi}</td>
+            <td>${r.nama || r.sku}</td>
+            <td>${r.qty}</td>
+            <td>${rupiah(r.total)}</td>
+            <td>${r.metode}</td>
+          </tr>
+        `).join('');
+      }
+
+      window.print();
+    }
+
+    fetchDashboard();
+  </script>
+</body>
+</html>
